@@ -32,6 +32,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       timestamp: ${{ steps.set-timestamp.outputs.timestamp }}
       tagname: ${{ steps.set-tag.outputs.tagname }}
+      branchname: ${{ steps.set-branch.outputs.branchname }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +60,9 @@ jobs:
       - id: set-tag
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         run: echo "::set-output name=tagname::${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+
+      - id: set-branch
+        run: echo "::set-output name=branchname::${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
 
   setup:
     name: Build Group [${{ matrix.group }}]
@@ -110,6 +114,34 @@ jobs:
 
       - name: ccache post-run
         run: ccache -s
+
+  artifacts:
+    name: Upload Artifacts to S3 for QGC
+    # runs-on: ubuntu-latest
+    runs-on: [runs-on,runner=1cpu-linux-x64,image=ubuntu22-full-x64,"run-id=${{ github.run_id }}"]
+    needs: [setup, group_targets]
+    if: contains(fromJSON('["main", "stable", "beta"]'), needs.group_targets.outputs.branchname)
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Arrange Binaries
+        run: |
+          mkdir artifacts
+          cp **/**/*.px4 artifacts/
+          cp **/**/*.elf artifacts/
+          for build_dir_path in build/*/ ; do
+            build_dir=${build_dir_path#*/}
+            build_dir=${build_dir::${#build_dir}-1}
+            mkdir artifacts/$build_dir
+            cp $build_dir_path/airframes.xml artifacts/$build_dir/
+            cp $build_dir_path/parameters.xml artifacts/$build_dir/
+            cp $build_dir_path/parameters.json artifacts/$build_dir/
+            cp $build_dir_path/parameters.json.xz artifacts/$build_dir/
+            cp $build_dir_path/actuators.json artifacts/$build_dir/
+            cp $build_dir_path/actuators.json.xz artifacts/$build_dir/
+            cp $build_dir_path/events/all_events.json.xz artifacts/$build_dir/
+          done
 
   release:
     name: Release and Upload
