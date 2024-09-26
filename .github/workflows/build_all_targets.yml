@@ -70,7 +70,14 @@ jobs:
     runs-on: [runs-on,runner=8cpu-linux-x64,image=ubuntu22-full-x64,"run-id=${{ github.run_id }}"]
     needs: group_targets
     strategy:
-      matrix: ${{ fromJson(needs.group_targets.outputs.matrix) }}
+      # matrix: ${{ fromJson(needs.group_targets.outputs.matrix) }}
+      matrix:
+        includes:
+          - container: "px4io/px4-dev-nuttx-focal:2022-08-12"
+            targets: "px4_fmu-v2_fixedwing,px4_fmu-v2_default,px4_fmu-v2_multicopter,px4_fmu-v2_lto"
+            arch: nuttx
+            group: nuttx-px4-3
+            len: 4
     container:
       image: ${{ matrix.container }}
     steps:
@@ -118,12 +125,15 @@ jobs:
   artifacts:
     name: Upload Artifacts to S3 for QGC
     # runs-on: ubuntu-latest
-    runs-on: [runs-on,runner=1cpu-linux-x64,image=ubuntu22-full-x64,"run-id=${{ github.run_id }}"]
+    runs-on: [runs-on,runner=2cpu-linux-x64,image=ubuntu22-full-x64,"run-id=${{ github.run_id }}"]
     needs: [setup, group_targets]
-    if: contains(fromJSON('["main", "stable", "beta"]'), needs.group_targets.outputs.branchname)
+    # if: contains(fromJSON('["main", "stable", "beta"]'), needs.group_targets.outputs.branchname)
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Arrange Binaries
         run: |
