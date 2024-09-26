@@ -131,6 +131,9 @@ jobs:
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
