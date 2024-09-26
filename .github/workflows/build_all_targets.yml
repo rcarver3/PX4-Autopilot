@@ -72,7 +72,7 @@ jobs:
     strategy:
       # matrix: ${{ fromJson(needs.group_targets.outputs.matrix) }}
       matrix:
-        includes:
+        include:
           - container: "px4io/px4-dev-nuttx-focal:2022-08-12"
             targets: "px4_fmu-v2_fixedwing,px4_fmu-v2_default,px4_fmu-v2_multicopter,px4_fmu-v2_lto"
             arch: nuttx
