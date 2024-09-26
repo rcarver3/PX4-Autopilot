@@ -78,6 +78,11 @@ jobs:
             arch: nuttx
             group: nuttx-px4-3
             len: 4
+          - container: "px4io/px4-dev-nuttx-focal:2022-08-12"
+            targets: "mro_x21-777_default,mro_ctrl-zero-f7-oem_default"
+            arch: "nuttx"
+            group: "nuttx-mro-1"
+            len: 2
     container:
       image: ${{ matrix.container }}
     steps:
